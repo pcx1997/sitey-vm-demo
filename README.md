@@ -2,12 +2,12 @@
   <img src="logo.png" alt="SITEY-VM" width="460">
 </p>
 
-<h1 align="center">SITEY-VM — Vulnerability Management Platform</h1>
+<h1 align="center">SITEY-VM   Vulnerability Management Platform</h1>
 
 <p align="center">
   <strong>Centralized vulnerability management for networks and web applications</strong>
   <br>
-  <em>Free &amp; open-source demo — try it in minutes</em>
+  <em>Free &amp; open-source demo   try it in minutes</em>
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 **SITEY-VM** is a vulnerability management platform that helps security teams discover, track, prioritize, and remediate vulnerabilities across their infrastructure. It integrates with popular scanners like **OpenVAS/GVM**, **Nessus**, and more.
 
-This repository contains the **free demo version** — fully functional, no time limit, no registration required.
+This repository contains the **free demo version**   fully functional, no time limit, no registration required.
 
 ### 🎯 Key Features
 
@@ -47,15 +47,15 @@ This repository contains the **free demo version** — fully functional, no time
 | OpenVAS/GVM scan import (XML) | ✅ | ✅ |
 | Multi-language UI (Turkish / English) | ✅ | ✅ |
 | Single user with password management | ✅ | ✅ |
-| 16+ scanner integration (Nessus, Burp, Nuclei…) | — | ✅ |
-| Agent-based asset management (3000+ agents) | — | ✅ |
-| RBAC multi-user & LDAP/AD SSO | — | ✅ |
-| AI-powered triage & security assistant | — | ✅ |
-| 6-stage team workflow & task management | — | ✅ |
-| Automated patch management | — | ✅ |
-| Attack surface management (ASM) | — | ✅ |
-| Jira, ServiceNow, Slack integrations | — | ✅ |
-| SLA tracking & multi-channel notifications | — | ✅ |
+| 16+ scanner integration (Nessus, Burp, Nuclei…) |   | ✅ |
+| Agent-based asset management (3000+ agents) |   | ✅ |
+| RBAC multi-user & LDAP/AD SSO |   | ✅ |
+| AI-powered triage & security assistant |   | ✅ |
+| 6-stage team workflow & task management |   | ✅ |
+| Automated patch management |   | ✅ |
+| Attack surface management (ASM) |   | ✅ |
+| Jira, ServiceNow, Slack integrations |   | ✅ |
+| SLA tracking & multi-channel notifications |   | ✅ |
 
 ### 🛠 Tech Stack
 
@@ -65,7 +65,7 @@ This repository contains the **free demo version** — fully functional, no time
 | **Backend** | Python, FastAPI, SQLite |
 | **Scanner** | OpenVAS / GVM integration |
 | **Packaging** | Custom SFX installer (Windows), shell scripts (Linux) |
-| **CI/CD** | GitHub Actions — automated build & release |
+| **CI/CD** | GitHub Actions   automated build & release |
 
 ---
 
@@ -103,28 +103,28 @@ Open in browser: `http://localhost:5000`
 
 ## 📸 Screenshots
 
-> Enterprise feature previews are built into the demo — explore them from the sidebar!
+> Enterprise feature previews are built into the demo   explore them from the sidebar!
 
 <details>
-<summary><strong>📊 Dashboard — Executive Overview</strong></summary>
+<summary><strong>📊 Dashboard   Executive Overview</strong></summary>
 <br>
 Risk distribution charts, severity breakdown, recent vulnerabilities at a glance.
 </details>
 
 <details>
-<summary><strong>📋 Vulnerability List — Filter, Search, Bulk Actions</strong></summary>
+<summary><strong>📋 Vulnerability List   Filter, Search, Bulk Actions</strong></summary>
 <br>
 Search by CVE, IP, name. Bulk status change, archive, PDF/Excel export.
 </details>
 
 <details>
-<summary><strong>🔍 Vulnerability Detail — Full Analysis</strong></summary>
+<summary><strong>🔍 Vulnerability Detail   Full Analysis</strong></summary>
 <br>
 CVSS score, description, solution, technical details, status management.
 </details>
 
 <details>
-<summary><strong>🚀 Enterprise Preview — AI, Workflow, Agents</strong></summary>
+<summary><strong>🚀 Enterprise Preview   AI, Workflow, Agents</strong></summary>
 <br>
 Interactive previews of all Enterprise features with live mockups.
 </details>
@@ -210,7 +210,7 @@ Enterprise includes: AI assistant, agent management, patch automation, team work
 
 **SITEY-VM**, güvenlik ekiplerinin ağ altyapısı ve web uygulamalarındaki güvenlik açıklarını merkezi olarak keşfetmesini, takip etmesini, önceliklendirmesini ve çözmesini sağlayan bir zafiyet yönetim platformudur.
 
-Bu depo, platformun **ücretsiz demo sürümünü** içerir — tamamen işlevsel, süre sınırı yok, kayıt gerektirmez.
+Bu depo, platformun **ücretsiz demo sürümünü** içerir   tamamen işlevsel, süre sınırı yok, kayıt gerektirmez.
 
 ---
 
@@ -251,22 +251,22 @@ Tarayıcıda açın: `http://localhost:5000`
 | Özellik | Demo | Kurumsal |
 |---------|:----:|:--------:|
 | Zafiyet gösterge paneli (Dashboard) | ✅ | ✅ |
-| Zafiyet listesi — filtreleme, arama, toplu işlem | ✅ | ✅ |
-| Detaylı zafiyet görünümü — CVSS skorlama | ✅ | ✅ |
+| Zafiyet listesi   filtreleme, arama, toplu işlem | ✅ | ✅ |
+| Detaylı zafiyet görünümü   CVSS skorlama | ✅ | ✅ |
 | Manuel zafiyet ekleme ve düzenleme | ✅ | ✅ |
 | PDF ve Excel rapor oluşturma | ✅ | ✅ |
 | OpenVAS/GVM tarama içe aktarma (XML) | ✅ | ✅ |
 | Çoklu dil desteği (Türkçe / İngilizce) | ✅ | ✅ |
 | Tek kullanıcı ve şifre yönetimi | ✅ | ✅ |
-| 16+ tarayıcı entegrasyonu (Nessus, Burp, Nuclei…) | — | ✅ |
-| Agent tabanlı varlık yönetimi (3000+ agent) | — | ✅ |
-| RBAC çoklu kullanıcı ve LDAP/AD SSO | — | ✅ |
-| AI destekli değerlendirme ve güvenlik asistanı | — | ✅ |
-| 6 aşamalı takım iş akışı ve görev yönetimi | — | ✅ |
-| Otomatik yama yönetimi | — | ✅ |
-| Atak yüzey yönetimi (ASM) | — | ✅ |
-| Jira, ServiceNow, Slack entegrasyonları | — | ✅ |
-| SLA takibi ve çok kanallı bildirimler | — | ✅ |
+| 16+ tarayıcı entegrasyonu (Nessus, Burp, Nuclei…) |   | ✅ |
+| Agent tabanlı varlık yönetimi (3000+ agent) |   | ✅ |
+| RBAC çoklu kullanıcı ve LDAP/AD SSO |   | ✅ |
+| AI destekli değerlendirme ve güvenlik asistanı |   | ✅ |
+| 6 aşamalı takım iş akışı ve görev yönetimi |   | ✅ |
+| Otomatik yama yönetimi |   | ✅ |
+| Atak yüzey yönetimi (ASM) |   | ✅ |
+| Jira, ServiceNow, Slack entegrasyonları |   | ✅ |
+| SLA takibi ve çok kanallı bildirimler |   | ✅ |
 
 ---
 
@@ -284,7 +284,7 @@ Tam özellikli kurumsal sürüm için:
 <p align="center">
   <img src="logo.png" alt="SITEY-VM" width="200">
   <br>
-  <sub>SITEY-VM — Vulnerability Management Platform | Zafiyet Yönetim Platformu</sub>
+  <sub>SITEY-VM   Vulnerability Management Platform | Zafiyet Yönetim Platformu</sub>
   <br><br>
   <a href="https://siteyvm.com">siteyvm.com</a>
 </p>
