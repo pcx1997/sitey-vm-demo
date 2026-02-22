@@ -251,7 +251,7 @@ const en = {
     status: "Status",
     active: "Active",
     admin: "Admin",
-    changePassword: "🔑 Change Password",
+    changePassword: "Change Password",
     currentPassword: "Current Password",
     newPassword: "New Password",
     confirmPassword: "Confirm New Password",

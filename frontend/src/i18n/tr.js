@@ -251,7 +251,7 @@ const tr = {
     status: "Durum",
     active: "Aktif",
     admin: "Admin",
-    changePassword: "�� Şifre Değiştir",
+    changePassword: "Şifre Değiştir",
     currentPassword: "Mevcut Şifre",
     newPassword: "Yeni Şifre",
     confirmPassword: "Yeni Şifre (Tekrar)",
