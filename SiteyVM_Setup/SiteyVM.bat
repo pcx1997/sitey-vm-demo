@@ -2,14 +2,18 @@
 setlocal enabledelayedexpansion
 
 set BASE_DIR=%~dp0
-set PYTHON_EXE=%BASE_DIR%python\python.exe
+set PYTHON_EXE=%BASE_DIR%python\pythonw.exe
+set PYTHON_EXE_FALLBACK=%BASE_DIR%python\python.exe
 set LAUNCHER=%BASE_DIR%launcher.py
 
 if not exist "%PYTHON_EXE%" (
-    echo [HATA] Python bulunamadi: %PYTHON_EXE%
-    echo Kurulum dosyalari eksik. Lutfen tekrar kurun.
-    pause
-    exit /b 1
+    if not exist "%PYTHON_EXE_FALLBACK%" (
+        echo [HATA] Python bulunamadi.
+        echo Kurulum dosyalari eksik. Lutfen tekrar kurun.
+        pause
+        exit /b 1
+    )
+    set PYTHON_EXE=%PYTHON_EXE_FALLBACK%
 )
 
 if not exist "%LAUNCHER%" (
@@ -27,4 +31,4 @@ cd /d "%BASE_DIR%"
 set PYTHONPATH=%BASE_DIR%app\backend;%BASE_DIR%app;%PYTHONPATH%
 set PYTHONIOENCODING=utf-8
 
-"%PYTHON_EXE%" "%LAUNCHER%" %*
+start "" "%PYTHON_EXE%" "%LAUNCHER%" %*

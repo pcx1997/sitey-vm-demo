@@ -34,13 +34,17 @@ def get_app_dir():
 def setup_logging():
     app_dir = get_app_dir()
     log_path = os.path.join(app_dir, LOG_FILENAME)
+    handlers = [logging.FileHandler(log_path, encoding="utf-8")]
+    if sys.stdout and hasattr(sys.stdout, "write") and not getattr(sys, "frozen", False):
+        try:
+            sys.stdout.write("")
+            handlers.append(logging.StreamHandler(sys.stdout))
+        except Exception:
+            pass
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler(log_path, encoding="utf-8"),
-            logging.StreamHandler(sys.stdout),
-        ],
+        handlers=handlers,
     )
     return logging.getLogger(APP_NAME)
 
@@ -156,9 +160,15 @@ def set_autostart(enable=True):
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
         if enable:
             base = get_base_dir()
-            bat_path = os.path.join(base, "SiteyVM.bat")
-            if os.path.exists(bat_path):
-                winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, '"{}"'.format(bat_path))
+            pythonw = os.path.join(base, "python", "pythonw.exe")
+            launcher = os.path.join(base, "launcher.py")
+            if os.path.exists(pythonw) and os.path.exists(launcher):
+                winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ,
+                                  '"{}" "{}"'.format(pythonw, launcher))
+            else:
+                bat_path = os.path.join(base, "SiteyVM.bat")
+                if os.path.exists(bat_path):
+                    winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, '"{}"'.format(bat_path))
         else:
             try:
                 winreg.DeleteValue(key, APP_NAME)
@@ -469,26 +479,19 @@ def main():
             if needs_deps or first_run:
                 if needs_deps:
                     logger.info("Bagimliliklar eksik - kurulum baslatiliyor")
-                    print("\n  Bagimliliklar eksik, kuruluyor...\n")
 
-                    print("  Bagimliliklar kontrol ediliyor...")
                     if not install_dependencies():
                         logger.error("Bagimlilik kurulumu basarisiz!")
-                        print("\n  [HATA] Bagimliliklar kurulamadi!")
-                        print("  Internet baglantinizi kontrol edin veya install.bat calistirin.\n")
-                        input("  Cikmak icin Enter'a basin...")
                         return
-                    print("  Bagimliliklar hazir.\n")
+                    logger.info("Bagimliliklar hazir.")
 
                     importlib.invalidate_caches()
 
                 if first_run:
                     logger.info("Ilk calistirma algilandi - Kurulum Sihirbazi baslatiliyor")
-                    print("\n  Ilk kurulum baslatiliyor...\n")
                     password = run_setup()
                     if password is None:
                         logger.info("Kurulum kullanici tarafindan iptal edildi")
-                        print("\n  Kurulum iptal edildi.\n")
                         return
                     elif password is True:
                         pass
@@ -525,9 +528,7 @@ def main():
         logger.info("Sunucu hazir! (http://0.0.0.0:%d)", config.port)
     else:
         logger.error("Sunucu 60 saniye icinde baslatilamadi!")
-        print("\n  [HATA] Sunucu baslatilamadi. Log dosyasini kontrol edin.")
-        print("  Log: {}\n".format(os.path.join(get_app_dir(), LOG_FILENAME)))
-        input("  Cikmak icin Enter'a basin...")
+        logger.error("Log: %s", os.path.join(get_app_dir(), LOG_FILENAME))
         return
 
     url = "http://{}:{}".format(primary_ip, config.port)
@@ -537,47 +538,26 @@ def main():
         logger.info("Tarayici aciliyor: %s", url)
         webbrowser.open(url)
 
-    print("")
-    print("  " + "=" * 56)
-    print("    {} Zafiyet Yonetim Platformu v{}".format(APP_DISPLAY_NAME, APP_VERSION))
-    print("  " + "=" * 56)
-    print("")
-    print("    Yerel Erisim  :  http://localhost:{}".format(config.port))
-    print("    Ag Erisimi    :  http://{}:{}".format(primary_ip, config.port))
-    if len(all_ips) > 1:
-        for ip in all_ips:
-            if ip != primary_ip:
-                print("    Diger IP      :  http://{}:{}".format(ip, config.port))
-    print("")
-    print("    Kullanici     :  admin")
-    print("")
-    print("  " + "-" * 56)
-    print("    Cikmak icin bu pencereyi kapatin veya Ctrl+C basin")
-    print("  " + "-" * 56)
-    print("")
+    logger.info("Yerel Erisim: http://localhost:%d", config.port)
+    logger.info("Ag Erisimi: http://%s:%d", primary_ip, config.port)
 
     tray = TrayApp(config, logger, server, ip_monitor)
     try:
         tray.run()
-    except KeyboardInterrupt:
-        pass
     except Exception as e:
         logger.warning("Tray hatasi: %s", e)
 
     if not tray._user_quit and server.is_alive():
         logger.info("Tray kapandi ama sunucu hala calisiyor, bekleniyor...")
-        try:
-            while server.is_alive():
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+        while server.is_alive():
+            time.sleep(1)
 
     logger.info("Kapatiliyor...")
     server.stop()
     ip_monitor.stop()
     if server._thread and server._thread.is_alive():
         server._thread.join(timeout=10)
-    print("\n  {} kapatildi.\n".format(APP_DISPLAY_NAME))
+    logger.info("%s kapatildi.", APP_DISPLAY_NAME)
 
 
 if __name__ == "__main__":
