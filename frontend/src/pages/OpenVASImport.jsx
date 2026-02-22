@@ -73,7 +73,7 @@ export default function OpenVASImport() {
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
           <button className="btn btn-secondary" onClick={() => { setFile(null); setError(""); }}>{t.openvasImport.clearBtn}</button>
-          <button className="btn btn-primary" onClick={handleUpload} disabled={file /home/kali/Masaüstü/vulnmgmt/backend/app/api/network_scan.py || loading} style={{ minWidth: 160 }}>{loading ? t.openvasImport.importing : t.openvasImport.importBtn}</button>
+          <button className="btn btn-primary" onClick={handleUpload} disabled={!file || loading} style={{ minWidth: 160 }}>{loading ? t.openvasImport.importing : t.openvasImport.importBtn}</button>
         </div>
       </div>
     </div>

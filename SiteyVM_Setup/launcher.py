@@ -17,6 +17,8 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
+_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
+
 APP_NAME = "SiteyVM"
 APP_DISPLAY_NAME = "SITEY-VM"
 APP_VERSION = "1.0.0-demo"
@@ -93,6 +95,7 @@ def get_local_ips():
             timeout=5,
             encoding="utf-8",
             errors="replace",
+            creationflags=_NO_WINDOW,
         )
         for line in result.stdout.split("\n"):
             line = line.strip()
@@ -316,6 +319,7 @@ def add_firewall_rule(port, logger):
         check = subprocess.run(
             ["netsh", "advfirewall", "firewall", "show", "rule", "name={}".format(rule_name)],
             capture_output=True, encoding="utf-8", errors="replace", timeout=10,
+            creationflags=_NO_WINDOW,
         )
         if "No rules match" in check.stdout or check.returncode != 0:
             subprocess.run(
@@ -323,6 +327,7 @@ def add_firewall_rule(port, logger):
                  "name={}".format(rule_name), "dir=in", "action=allow",
                  "protocol=TCP", "localport={}".format(port)],
                 capture_output=True, encoding="utf-8", errors="replace", timeout=10,
+                creationflags=_NO_WINDOW,
             )
             logger.info("Firewall kurali eklendi: %s", rule_name)
         else:
@@ -419,7 +424,8 @@ class TrayApp:
         ip = self.ip_monitor.current_ip
         url = "http://{}:{}".format(ip, self.config.port)
         try:
-            subprocess.run(["clip"], input=url.encode("utf-8"), check=True, timeout=5)
+            subprocess.run(["clip"], input=url.encode("utf-8"), check=True, timeout=5,
+                           creationflags=_NO_WINDOW)
         except Exception:
             pass
 
