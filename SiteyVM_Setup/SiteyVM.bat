@@ -1,8 +1,8 @@
 @echo off
 
 set "BASE_DIR=%~dp0"
-set "PYTHONW_EXE=%BASE_DIR%python\pythonw.exe"
 set "PYTHON_EXE=%BASE_DIR%python\python.exe"
+set "PYTHONW_EXE=%BASE_DIR%python\pythonw.exe"
 set "LAUNCHER=%BASE_DIR%launcher.py"
 
 if not exist "%PYTHON_EXE%" (
@@ -25,22 +25,26 @@ cd /d "%BASE_DIR%"
 set "PYTHONPATH=%BASE_DIR%app\backend;%BASE_DIR%app"
 set "PYTHONIOENCODING=utf-8"
 
-REM Kurulum tamamlandıysa arka planda çalıştır
 set "CONFIG_FILE=%SITEYVM_DATA_DIR%\siteyvm_config.json"
 
-REM Basit kontrol: config + uvicorn varsa kurulum tamam
+REM Kurulum tamamlanmis mi kontrol et
 if exist "%CONFIG_FILE%" (
     if exist "%BASE_DIR%python\Lib\site-packages\uvicorn\__init__.py" (
         if exist "%PYTHONW_EXE%" (
-            start /b "" "%PYTHONW_EXE%" "%LAUNCHER%" %*
+            REM Kurulum tamam - arka planda sessizce baslat (CMD penceresi SIFIR)
+            start "" /b "%PYTHONW_EXE%" "%LAUNCHER%" --background
             exit /b 0
         )
     )
 )
 
-REM İlk kurulum veya bağımlılık eksik - konsollu çalıştır
+REM Ilk kurulum: bagimliliklari kur, sihirbazi calistir
 echo.
-echo   SITEY-VM ilk kurulum baslatiliyor...
+echo   ============================================
+echo     SITEY-VM Kurulum Baslatiliyor
+echo   ============================================
+echo.
 echo   Bu pencere kurulum tamamlaninca kapanacak.
 echo.
+
 "%PYTHON_EXE%" "%LAUNCHER%" %*

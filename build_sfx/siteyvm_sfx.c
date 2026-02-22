@@ -220,7 +220,7 @@ static DWORD WINAPI worker(LPVOID param) {
     if (SHGetFolderPathA(NULL, CSIDL_COMMON_DESKTOPDIRECTORY, NULL, 0, dk)==S_OK) {
         char l[MAX_PATH], b[MAX_PATH], ic[MAX_PATH];
         wsprintfA(l, "%s\\SiteyVM.lnk", dk);
-        wsprintfA(b, "%s\\SiteyVM.bat", c->dir);
+        wsprintfA(b, "%s\\SiteyVM_silent.vbs", c->dir);
         wsprintfA(ic, "%s\\icon.ico", c->dir);
         make_shortcut(b, l, c->dir, ic);
     }

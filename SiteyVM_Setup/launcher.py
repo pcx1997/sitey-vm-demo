@@ -22,6 +22,7 @@ _NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 APP_NAME = "SiteyVM"
 APP_DISPLAY_NAME = "SITEY-VM"
 APP_VERSION = "1.0.0-demo"
+TASK_NAME = "SiteyVM"
 SERVICE_PORT = 5000
 CONFIG_FILENAME = "siteyvm_config.json"
 LOG_FILENAME = "siteyvm.log"
@@ -57,12 +58,18 @@ def setup_logging():
 
 
 def _safe_print(msg):
-    """Konsol varsa yazdır, yoksa sessizce geç."""
     try:
         if sys.stdout and sys.stdout.name != os.devnull:
             print(msg)
     except Exception:
         pass
+
+
+def _run_cmd(args, timeout=15):
+    return subprocess.run(
+        args, capture_output=True, encoding="utf-8",
+        errors="replace", timeout=timeout, creationflags=_NO_WINDOW,
+    )
 
 
 def get_local_ips():
@@ -78,7 +85,6 @@ def get_local_ips():
             s.close()
     except Exception:
         pass
-
     try:
         hostname = socket.gethostname()
         for info in socket.getaddrinfo(hostname, None, socket.AF_INET):
@@ -87,16 +93,8 @@ def get_local_ips():
                 ips.add(ip)
     except Exception:
         pass
-
     try:
-        result = subprocess.run(
-            ["ipconfig"],
-            capture_output=True,
-            timeout=5,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=_NO_WINDOW,
-        )
+        result = _run_cmd(["ipconfig"], timeout=5)
         for line in result.stdout.split("\n"):
             line = line.strip()
             if "IPv4" in line and ":" in line:
@@ -105,7 +103,6 @@ def get_local_ips():
                     ips.add(ip)
     except Exception:
         pass
-
     if not ips:
         ips.add("127.0.0.1")
     return sorted(ips)
@@ -170,27 +167,6 @@ class AppConfig:
         self.save()
 
 
-def set_autostart(enable=True):
-    try:
-        import winreg
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
-        if enable:
-            base = get_base_dir()
-            bat_path = os.path.join(base, "SiteyVM.bat")
-            if os.path.exists(bat_path):
-                winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, '"{}"'.format(bat_path))
-        else:
-            try:
-                winreg.DeleteValue(key, APP_NAME)
-            except FileNotFoundError:
-                pass
-        winreg.CloseKey(key)
-        return True
-    except Exception:
-        return False
-
-
 class IPMonitor:
     def __init__(self, config, logger):
         self.config = config
@@ -251,7 +227,7 @@ class ServerManager:
                 self.logger.error("Sunucu hatasi: %s", e, exc_info=True)
             if not self._should_run:
                 break
-            self.logger.warning("Sunucu kapandi, %d saniye sonra yeniden baslatiliyor...", restart_delay)
+            self.logger.warning("Sunucu kapandi, %d sn sonra yeniden baslatiliyor...", restart_delay)
             time.sleep(restart_delay)
             restart_delay = min(restart_delay * 2, max_delay)
             self._ready.clear()
@@ -259,14 +235,12 @@ class ServerManager:
     def _run_once(self):
         base = get_base_dir()
         backend_dir = os.path.join(base, "app", "backend")
-
         if not os.path.isdir(backend_dir):
             backend_dir = os.path.join(base, "backend")
 
         site_packages = os.path.join(base, "python", "Lib", "site-packages")
         if os.path.isdir(site_packages) and site_packages not in sys.path:
             sys.path.insert(0, site_packages)
-
         if backend_dir not in sys.path:
             sys.path.insert(0, backend_dir)
 
@@ -281,17 +255,13 @@ class ServerManager:
         self.logger.info("Sunucu baslatiliyor: 0.0.0.0:%d", port)
 
         config = uvicorn.Config(
-            fastapi_app,
-            host="0.0.0.0",
-            port=port,
-            log_level="warning",
-            access_log=False,
+            fastapi_app, host="0.0.0.0", port=port,
+            log_level="warning", access_log=False,
         )
         self._server = uvicorn.Server(config)
 
         ready_thread = threading.Thread(target=self._check_ready, daemon=True)
         ready_thread.start()
-
         self._server.run()
 
     def _check_ready(self):
@@ -316,24 +286,152 @@ class ServerManager:
 def add_firewall_rule(port, logger):
     try:
         rule_name = "{}-Port-{}".format(APP_DISPLAY_NAME, port)
-        check = subprocess.run(
-            ["netsh", "advfirewall", "firewall", "show", "rule", "name={}".format(rule_name)],
-            capture_output=True, encoding="utf-8", errors="replace", timeout=10,
-            creationflags=_NO_WINDOW,
+        check = _run_cmd(
+            ["netsh", "advfirewall", "firewall", "show", "rule",
+             "name={}".format(rule_name)], timeout=10,
         )
         if "No rules match" in check.stdout or check.returncode != 0:
-            subprocess.run(
+            _run_cmd(
                 ["netsh", "advfirewall", "firewall", "add", "rule",
                  "name={}".format(rule_name), "dir=in", "action=allow",
-                 "protocol=TCP", "localport={}".format(port)],
-                capture_output=True, encoding="utf-8", errors="replace", timeout=10,
-                creationflags=_NO_WINDOW,
+                 "protocol=TCP", "localport={}".format(port)], timeout=10,
             )
             logger.info("Firewall kurali eklendi: %s", rule_name)
         else:
             logger.info("Firewall kurali zaten mevcut: %s", rule_name)
     except Exception as e:
         logger.warning("Firewall kurali eklenemedi: %s", e)
+
+
+def _cleanup_old_sc_service(logger):
+    try:
+        r = _run_cmd(["sc", "query", "SiteyVM"], timeout=10)
+        if r.returncode == 0:
+            logger.info("Eski sc servisi bulundu, kaldiriliyor...")
+            _run_cmd(["sc", "stop", "SiteyVM"])
+            time.sleep(2)
+            _run_cmd(["sc", "delete", "SiteyVM"], timeout=10)
+            logger.info("Eski sc servisi kaldirildi.")
+    except Exception:
+        pass
+
+
+def _cleanup_old_registry(logger):
+    try:
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
+        try:
+            winreg.DeleteValue(key, APP_NAME)
+            logger.info("Eski registry autostart kaldirildi.")
+        except FileNotFoundError:
+            pass
+        winreg.CloseKey(key)
+    except Exception:
+        pass
+
+
+def register_scheduled_task(logger):
+    base = get_base_dir()
+    pythonw = os.path.join(base, "python", "pythonw.exe")
+    launcher = os.path.join(base, "launcher.py")
+
+    if not os.path.exists(pythonw):
+        pythonw = os.path.join(base, "python", "python.exe")
+    if not os.path.exists(pythonw):
+        logger.error("Python exe bulunamadi!")
+        return False
+
+    try:
+        _run_cmd(["schtasks", "/Delete", "/TN", TASK_NAME, "/F"], timeout=10)
+    except Exception:
+        pass
+
+    xml_content = '''<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>SITEY-VM Zafiyet Yonetim Platformu</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>7</Priority>
+    <RestartOnFailure>
+      <Interval>PT1M</Interval>
+      <Count>3</Count>
+    </RestartOnFailure>
+  </Settings>
+  <Actions>
+    <Exec>
+      <Command>{exe}</Command>
+      <Arguments>"{launcher}" --background</Arguments>
+      <WorkingDirectory>{workdir}</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>'''.format(exe=pythonw, launcher=launcher, workdir=base)
+
+    xml_path = os.path.join(get_app_dir(), "siteyvm_task.xml")
+    with open(xml_path, "w", encoding="utf-16") as f:
+        f.write(xml_content)
+
+    result = _run_cmd(
+        ["schtasks", "/Create", "/TN", TASK_NAME, "/XML", xml_path, "/F"],
+        timeout=15,
+    )
+
+    try:
+        os.remove(xml_path)
+    except Exception:
+        pass
+
+    if result.returncode == 0:
+        logger.info("Gorev Zamanlayici kaydedildi: %s", TASK_NAME)
+        return True
+    else:
+        logger.error("Gorev Zamanlayici kaydi basarisiz: %s", result.stderr or result.stdout)
+        return False
+
+
+def unregister_scheduled_task(logger):
+    result = _run_cmd(["schtasks", "/Delete", "/TN", TASK_NAME, "/F"], timeout=10)
+    if result.returncode == 0:
+        logger.info("Gorev Zamanlayici kaydı silindi: %s", TASK_NAME)
+        return True
+    return False
+
+
+def start_scheduled_task(logger):
+    result = _run_cmd(["schtasks", "/Run", "/TN", TASK_NAME], timeout=15)
+    if result.returncode == 0:
+        logger.info("Gorev baslatildi: %s", TASK_NAME)
+        return True
+    logger.warning("Gorev baslatma hatasi: %s", result.stderr or result.stdout)
+    return False
+
+
+def stop_scheduled_task(logger):
+    result = _run_cmd(["schtasks", "/End", "/TN", TASK_NAME], timeout=15)
+    return result.returncode == 0
 
 
 class TrayApp:
@@ -358,10 +456,10 @@ class TrayApp:
             try:
                 self._run_tray(pystray, Image)
             except Exception as e:
-                self.logger.warning("Tray ikonu hatasi: %s - yeniden baslatiliyor", e)
+                self.logger.warning("Tray hatasi: %s - yeniden baslatiliyor", e)
                 time.sleep(3)
             if not self._user_quit:
-                self.logger.info("Tray ikonu kapandi, sunucu hala calisiyor - tray yeniden baslatiliyor")
+                self.logger.info("Tray kapandi, sunucu hala calisiyor - tray yeniden baslatiliyor")
 
     def _run_tray(self, pystray, Image):
         icon_path = os.path.join(get_base_dir(), "icon.ico")
@@ -396,18 +494,11 @@ class TrayApp:
         menu = pystray.Menu(
             pystray.MenuItem(
                 "{}:{}".format(ip, port),
-                lambda: None,
-                enabled=False,
+                lambda: None, enabled=False,
             ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Arayuzu Ac", self._open_browser, default=True),
             pystray.MenuItem("IP Adresini Kopyala", self._copy_ip),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem(
-                "Otomatik Baslat",
-                self._toggle_autostart,
-                checked=lambda _: self.config.auto_start,
-            ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Cikis", self._quit),
         )
@@ -424,14 +515,10 @@ class TrayApp:
         ip = self.ip_monitor.current_ip
         url = "http://{}:{}".format(ip, self.config.port)
         try:
-            subprocess.run(["clip"], input=url.encode("utf-8"), check=True, timeout=5,
-                           creationflags=_NO_WINDOW)
+            subprocess.run(["clip"], input=url.encode("utf-8"),
+                           check=True, timeout=5, creationflags=_NO_WINDOW)
         except Exception:
             pass
-
-    def _toggle_autostart(self, *_):
-        self.config.auto_start = not self.config.auto_start
-        set_autostart(self.config.auto_start)
 
     def _quit(self, *_):
         self._user_quit = True
@@ -449,24 +536,7 @@ class TrayApp:
             self.ip_monitor.stop()
 
 
-def main():
-    logger = setup_logging()
-    logger.info("=" * 60)
-    logger.info("%s Demo v%s baslatiliyor...", APP_DISPLAY_NAME, APP_VERSION)
-    logger.info("Kurulum dizini: %s", get_base_dir())
-    logger.info("Veri dizini: %s", get_app_dir())
-
-    _shutdown_event = threading.Event()
-
-    def _signal_handler(signum, frame):
-        logger.info("Sinyal alindi (%s), kapatiliyor...", signum)
-        _shutdown_event.set()
-
-    signal.signal(signal.SIGINT, _signal_handler)
-    signal.signal(signal.SIGTERM, _signal_handler)
-    if hasattr(signal, "SIGBREAK"):
-        signal.signal(signal.SIGBREAK, _signal_handler)
-
+def _setup_environment(logger):
     try:
         base = get_base_dir()
 
@@ -494,7 +564,6 @@ def main():
                 if needs_deps:
                     logger.info("Bagimliliklar eksik - kurulum baslatiliyor")
                     _safe_print("\n  Bagimliliklar eksik, kuruluyor...\n")
-
                     if not install_dependencies():
                         logger.error("Bagimlilik kurulumu basarisiz!")
                         _safe_print("\n  [HATA] Bagimliliklar kurulamadi!")
@@ -502,29 +571,54 @@ def main():
                         return
                     logger.info("Bagimliliklar hazir.")
                     _safe_print("  Bagimliliklar hazir.\n")
-
                     importlib.invalidate_caches()
 
                 if first_run:
-                    logger.info("Ilk calistirma algilandi - Kurulum Sihirbazi baslatiliyor")
+                    logger.info("Ilk calistirma - Kurulum Sihirbazi baslatiliyor")
                     _safe_print("\n  Ilk kurulum baslatiliyor...\n")
                     password = run_setup()
                     if password is None:
-                        logger.info("Kurulum kullanici tarafindan iptal edildi")
+                        logger.info("Kurulum iptal edildi")
                         _safe_print("\n  Kurulum iptal edildi.\n")
-                        return
+                        sys.exit(0)
                     elif password is True:
                         pass
                     else:
                         logger.info("Admin sifresi belirlendi")
                         os.environ["SITEYVM_ADMIN_PASSWORD"] = password
         else:
-            logger.warning("setup_wizard.py bulunamadi, varsayilan ayarlarla devam ediliyor")
+            logger.warning("setup_wizard.py bulunamadi")
     except Exception as e:
         logger.warning("Kurulum sihirbazi hatasi: %s", e)
 
-    config = AppConfig()
 
+def _wait_for_port(port, timeout=60):
+    for _ in range(timeout):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect(("127.0.0.1", port))
+            s.close()
+            return True
+        except Exception:
+            time.sleep(1)
+    return False
+
+
+def main():
+    logger = setup_logging()
+    logger.info("=" * 60)
+    logger.info("%s Demo v%s baslatiliyor...", APP_DISPLAY_NAME, APP_VERSION)
+    logger.info("Kurulum dizini: %s", get_base_dir())
+    logger.info("Veri dizini: %s", get_app_dir())
+    logger.info("Argumanlar: %s", sys.argv[1:])
+
+    _cleanup_old_sc_service(logger)
+    _cleanup_old_registry(logger)
+
+    _setup_environment(logger)
+
+    config = AppConfig()
     primary_ip = get_primary_ip()
     all_ips = get_local_ips()
     config.last_ip = primary_ip
@@ -534,8 +628,8 @@ def main():
 
     add_firewall_rule(config.port, logger)
 
-    if config.auto_start:
-        set_autostart(True)
+    _safe_print("\n  Gorev Zamanlayici'ya kaydediliyor...\n")
+    register_scheduled_task(logger)
 
     server = ServerManager(config, logger)
     server.start()
@@ -548,20 +642,19 @@ def main():
         logger.info("Sunucu hazir! (http://0.0.0.0:%d)", config.port)
     else:
         logger.error("Sunucu 60 saniye icinde baslatilamadi!")
-        logger.error("Log: %s", os.path.join(get_app_dir(), LOG_FILENAME))
-        _safe_print("\n  [HATA] Sunucu baslatilamadi. Log dosyasini kontrol edin.")
-        _safe_print("  Log: {}\n".format(os.path.join(get_app_dir(), LOG_FILENAME)))
+        _safe_print("\n  [HATA] Sunucu baslatilamadi. Log: {}".format(
+            os.path.join(get_app_dir(), LOG_FILENAME)))
         return
 
     url = "http://{}:{}".format(primary_ip, config.port)
-    background = "--background" in sys.argv
 
+    background = "--background" in sys.argv
     if not background and config.data.get("open_browser_on_start", True):
         logger.info("Tarayici aciliyor: %s", url)
         webbrowser.open(url)
 
-    logger.info("Yerel Erisim: http://localhost:%d", config.port)
-    logger.info("Ag Erisimi: http://%s:%d", primary_ip, config.port)
+    logger.info("Yerel: http://localhost:%d | Ag: http://%s:%d",
+                config.port, primary_ip, config.port)
 
     tray = TrayApp(config, logger, server, ip_monitor)
     try:

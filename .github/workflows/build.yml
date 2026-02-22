@@ -61,6 +61,7 @@ jobs:
           cp SiteyVM_Setup/setup_wizard.py _payload/
           cp SiteyVM_Setup/install.bat _payload/
           cp SiteyVM_Setup/SiteyVM.bat _payload/
+          cp SiteyVM_Setup/SiteyVM_silent.vbs _payload/
           cp SiteyVM_Setup/KULLANIM.txt _payload/
           cp SiteyVM_Setup/icon.ico _payload/ 2>/dev/null || true
 
