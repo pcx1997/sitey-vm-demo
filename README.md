@@ -48,7 +48,7 @@ This repository contains the **free demo version**   fully functional, no time l
 | Multi-language UI (Turkish / English) | ✅ | ✅ |
 | Single user with password management | ✅ | ✅ |
 | 16+ scanner integration (Nessus, Burp, Nuclei…) |   | ✅ |
-| Agent-based asset management (3000+ agents) |   | ✅ |
+| Agent-based asset management |   | ✅ |
 | RBAC multi-user & LDAP/AD SSO |   | ✅ |
 | AI-powered triage & security assistant |   | ✅ |
 | 6-stage team workflow & task management |   | ✅ |
@@ -259,7 +259,7 @@ Tarayıcıda açın: `http://localhost:5000`
 | Çoklu dil desteği (Türkçe / İngilizce) | ✅ | ✅ |
 | Tek kullanıcı ve şifre yönetimi | ✅ | ✅ |
 | 16+ tarayıcı entegrasyonu (Nessus, Burp, Nuclei…) |   | ✅ |
-| Agent tabanlı varlık yönetimi (3000+ agent) |   | ✅ |
+| Agent tabanlı varlık yönetimi |   | ✅ |
 | RBAC çoklu kullanıcı ve LDAP/AD SSO |   | ✅ |
 | AI destekli değerlendirme ve güvenlik asistanı |   | ✅ |
 | 6 aşamalı takım iş akışı ve görev yönetimi |   | ✅ |
