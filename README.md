@@ -28,6 +28,7 @@
 </p>
 
 ---
+<img width="1919" height="918" alt="image" src="https://github.com/user-attachments/assets/eb013abb-26ec-4f14-b1bb-4f0d3f95331c" />
 
 ## ✨ What is SITEY-VM?
 
@@ -181,6 +182,7 @@ Enterprise includes: AI assistant, agent management, patch automation, team work
 <h1 align="center" id="-türkçe">🇹🇷 Türkçe</h1>
 
 <br>
+<img width="1919" height="918" alt="image" src="https://github.com/user-attachments/assets/f6c20c37-8efb-4ed4-a690-64ed8363c25b" />
 
 ## SITEY-VM Nedir?
 
